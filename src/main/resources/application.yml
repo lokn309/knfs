@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: knfs
+
+knfs:
+  path: ${user.home}/knfs
