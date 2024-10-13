@@ -4,6 +4,7 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,17 +27,36 @@ public class FileController {
 
     @Value("${knfs.path}")
     private String uploadPath;
+
+    @Value("${knfs.backupUrl}")
+    private String backupUrl;
+
+    @Autowired
+    private HttpSyncer httpSyncer;
+
     @SneakyThrows
     @PostMapping("/upload")
-    public String upload(@RequestParam("file") MultipartFile file) {
+    public String upload(@RequestParam("file") MultipartFile file,
+                         HttpServletRequest request) {
         File dir = new File(uploadPath);
         if (!dir.exists()) {
-            dir.mkdir();
+            dir.mkdirs();
         }
-        String filename = file.getOriginalFilename();
+        boolean neeSync = false;
+        // 如果请求头参数为空，则表示是用户上传的数据，否就是同步的数据
+        String filename = request.getHeader(HttpSyncer.XFILENAME);
+        // 同步文件到 backup
+        if (filename == null || filename.isEmpty()) {
+            neeSync = true;
+            filename = file.getOriginalFilename();
+        }
         File dest = new File(uploadPath + "/" + filename);
-
         file.transferTo(dest);
+
+        if (neeSync) {
+            httpSyncer.sync(dest, backupUrl);
+        }
+
         return filename;
     }
 

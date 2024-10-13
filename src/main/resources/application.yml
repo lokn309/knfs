@@ -4,3 +4,4 @@ spring:
 
 knfs:
   path: ${user.home}/knfs
+  backupUrl: http://localhost:8081/upload
