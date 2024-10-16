@@ -48,9 +48,11 @@ public class FileController {
         // 同步文件到 backup
         if (filename == null || filename.isEmpty()) {
             neeSync = true;
-            filename = file.getOriginalFilename();
+//            filename = file.getOriginalFilename();
+            filename = FileUtils.getUUIDFile(file.getOriginalFilename());
         }
-        File dest = new File(uploadPath + "/" + filename);
+        String subdir = FileUtils.getSubdir(filename);
+        File dest = new File(uploadPath + "/" + subdir + "/" + filename);
         file.transferTo(dest);
 
         if (neeSync) {
@@ -62,7 +64,8 @@ public class FileController {
 
     @RequestMapping("/download")
     public void download(String name, HttpServletResponse response) {
-        String path = uploadPath + "/" + name;
+        String subdir = FileUtils.getSubdir(name);
+        String path = uploadPath + "/" + subdir + "/" + name;
         File file = new File(path);
         try {
             FileInputStream fis = new FileInputStream(file);
@@ -71,8 +74,12 @@ public class FileController {
 
             // 加一些 response 的头
             response.setCharacterEncoding("utf-8");
-            response.setContentType("application/octet-stream");
-            response.setHeader("Content-Disposition", "attachment;filename=" + name);
+            // 二进制流直接下载
+            //response.setContentType("application/octet-stream");
+            // 默认会下载
+//            response.setHeader("Content-Disposition", "attachment;filename=" + name);
+            // 在浏览器中预览
+            response.setContentType(FileUtils.getMimeType(name));
             response.setHeader("Content-Length", String.valueOf(is.available()));
 
             // 读取文件信息，并逐段输出
