@@ -46,10 +46,15 @@ public class FileController {
         // 如果请求头参数为空，则表示是用户上传的数据，否就是同步的数据
         String filename = request.getHeader(HttpSyncer.XFILENAME);
         // 同步文件到 backup
-        if (filename == null || filename.isEmpty()) {
+        String originalFilename = file.getOriginalFilename();
+        if (filename == null || filename.isEmpty()) { // upload上传文件
             neeSync = true;
-//            filename = file.getOriginalFilename();
-            filename = FileUtils.getUUIDFile(file.getOriginalFilename());
+            filename = FileUtils.getUUIDFile(originalFilename);
+        } else { // 同步文件
+            String xor = request.getHeader(HttpSyncer.XORIGFILENAME);
+            if (xor != null && !xor.isEmpty()) {
+                originalFilename = xor;
+            }
         }
         String subdir = FileUtils.getSubdir(filename);
         File dest = new File(uploadPath + "/" + subdir + "/" + filename);
@@ -58,7 +63,7 @@ public class FileController {
         // 2、处理meta
         FileMeta meta = new FileMeta();
         meta.setName(filename);
-        meta.setOriginalName(file.getOriginalFilename());
+        meta.setOriginalName(originalFilename);
         meta.setSize(file.getSize());
         if (autoMd5) {
             meta.getTags().put("md5", DigestUtils.md5DigestAsHex(new FileInputStream(dest)));
@@ -74,7 +79,7 @@ public class FileController {
 
         // 3、同步到 backup
         if (neeSync) {
-            httpSyncer.sync(dest, backupUrl);
+            httpSyncer.sync(dest, backupUrl, originalFilename);
         }
 
         return filename;
