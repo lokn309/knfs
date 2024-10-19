@@ -1,12 +1,16 @@
 package cn.lokn.knfs;
 
+import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
+@Import(RocketMQAutoConfiguration.class)
 public class KnfsApplication {
 
     public static void main(String[] args) {

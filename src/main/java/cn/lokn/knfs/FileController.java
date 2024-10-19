@@ -34,8 +34,17 @@ public class FileController {
     @Value("${knfs.autoMd5}")
     private boolean autoMd5;
 
+    @Value("${knfs.syncBackup}")
+    private boolean syncBackup;
+
+    @Value("${knfs.downloadUrl}")
+    private String downloadUrl;
+
     @Autowired
     private HttpSyncer httpSyncer;
+
+    @Autowired
+    private MQSyncer mqSyncer;
 
     @SneakyThrows
     @PostMapping("/upload")
@@ -65,21 +74,38 @@ public class FileController {
         meta.setName(filename);
         meta.setOriginalName(originalFilename);
         meta.setSize(file.getSize());
+        meta.setDownloadUrl(downloadUrl + "/" + filename);
         if (autoMd5) {
             meta.getTags().put("md5", DigestUtils.md5DigestAsHex(new FileInputStream(dest)));
         }
 
         // 三种存放方式，本地采用2.1的方式
         // 2.1 存放到本地文件
-        // 2.2 存放到数据库
-        // 2.3 存到配置中或注册中心，比如zk
         String metaName = filename + ".meta";
         File metaFile = new File(uploadPath + "/" + subdir + "/" + metaName);
         FileUtils.writeMeta(metaFile, meta);
 
+        // 2.2 存放到数据库
+        // 2.3 存到配置中或注册中心，比如zk
+
         // 3、同步到 backup
+        // 同步文件到backup
+        // 让我们可以实现同步处理文件复制，也可以异步处理文件复制
         if (neeSync) {
-            httpSyncer.sync(dest, backupUrl, originalFilename);
+            if (syncBackup) {
+                try {
+                    httpSyncer.sync(dest, backupUrl, originalFilename);
+                } catch (Exception e) {
+                    // log ex
+                    e.printStackTrace();
+                    // 高可用的方式来实现同步
+                    // 如果抛出异常，则通过异步的方式来实现文件复制
+                    // MQSyncer.sync(backupUrl,meta);
+                }
+            } else {
+                mqSyncer.sync(meta);
+            }
+
         }
 
         return filename;

@@ -1,8 +1,19 @@
+server:
+  port: 8090
+
 spring:
   application:
     name: knfs
 
 knfs:
   path: ${user.home}/knfs
-  backupUrl: http://localhost:8081/upload
   autoMd5: true
+  syncBackup: false
+  group: C8091
+  backupUrl: http://localhost:8091/upload
+  downloadUrl: http://localhost:8090/download
+
+rocketmq:
+  name-server: localhost:9876
+  producer:
+    group: knfs-producer

@@ -20,6 +20,7 @@ public class FileMeta {
     private String name;
     private String originalName;
     private long size;
+    private String downloadUrl;
     // 高级特性
     private Map<String, String> tags = new HashMap<>();
 

@@ -1,9 +1,16 @@
 package cn.lokn.knfs;
 
 import com.alibaba.fastjson.JSON;
+import jakarta.servlet.ServletOutputStream;
 import lombok.SneakyThrows;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
+import java.io.*;
 import java.net.FileNameMap;
 import java.net.URLConnection;
 import java.nio.file.Files;
@@ -42,7 +49,7 @@ public class FileUtils {
     }
 
     public static String getUUIDFile(String file) {
-        return UUID.randomUUID().toString() + "." + getExt(file);
+        return UUID.randomUUID().toString() + getExt(file);
     }
 
     public static String getSubdir(String file) {
@@ -59,5 +66,32 @@ public class FileUtils {
         Files.writeString(Paths.get(metaFile.getAbsolutePath()), json,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE);
+    }
+
+    @SneakyThrows
+    public static void writeString(File file, String content) {
+        Files.writeString(Paths.get(file.getAbsolutePath()), content,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE);
+    }
+
+    @SneakyThrows
+    public static void download(String downloadUrl, File file) {
+        System.out.println(" ===>>>>> download file: " + file.getAbsolutePath());
+        RestTemplate restTemplate = new RestTemplate();
+        HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
+        ResponseEntity<Resource> exchange = restTemplate
+                .exchange(downloadUrl, HttpMethod.GET, entity, Resource.class);
+
+        InputStream is = new BufferedInputStream(exchange.getBody().getInputStream());
+        byte[] bytes = new byte[16*1024];
+        FileOutputStream outputStream = new FileOutputStream(file);
+        // 读取文件信息，并逐段输出
+        while (is.read(bytes) != -1) {
+            outputStream.write(bytes);
+        }
+        outputStream.flush();
+        outputStream.close();
+        is.close();
     }
 }
